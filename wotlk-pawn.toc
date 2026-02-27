@@ -1,9 +1,0 @@
-## Interface: 30300
-## Title: WOTLK Pawn
-## Notes: Calculates EP values for all classes and specializations
-## SavedVariables: WOTLKPawnDB
-## SavedVariablesPerCharacter: WOTLKPawnCharDB
-wotlk-pawn.lua
-wotlk-pawn.persistence.lua
-wotlk-pawn.core.lua
-wotlk-pawn.frontend.lua
