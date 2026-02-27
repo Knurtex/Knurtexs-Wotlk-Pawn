@@ -1687,6 +1687,8 @@ local function AddEPToTooltip(tooltip)
     local hasNonBisGem = false
     local hasBisGem = false
     local currentGemEP = 0
+    local nonBisGemCount = 0
+    local totalNonBisGemEP = 0
     local recs = addon.GetGemRecommendation and addon.GetGemRecommendation(class, currentSpecName)
     local currentWeights = addon.GetCurrentWeights()
     if recs and recs.bis and GetItemGem then
@@ -1713,6 +1715,8 @@ local function AddEPToTooltip(tooltip)
                             if ep > currentGemEP then
                                 currentGemEP = ep
                             end
+                            nonBisGemCount = nonBisGemCount + 1
+                            totalNonBisGemEP = totalNonBisGemEP + ep
                         end
                     end
                 end
@@ -1791,12 +1795,17 @@ local function AddEPToTooltip(tooltip)
     end
 
     -- Accumulate projected gem EP
-    if emptySocketCount > 0 and recs and recs.bis then
-        if perSocketResult and perSocketResult.useColorMatch then
-            projectedGemEP = perSocketResult.matchEP
-        else
-            local bisEP = recs.bis.computedEP or (recs.bis.ep_amount * (currentWeights[recs.bis.ep_stat] or 0))
-            projectedGemEP = bisEP * emptySocketCount
+    if recs and recs.bis then
+        local bisEP = recs.bis.computedEP or (recs.bis.ep_amount * (currentWeights[recs.bis.ep_stat] or 0))
+        if emptySocketCount > 0 then
+            if perSocketResult and perSocketResult.useColorMatch then
+                projectedGemEP = perSocketResult.matchEP
+            else
+                projectedGemEP = bisEP * emptySocketCount
+            end
+        end
+        if nonBisGemCount > 0 then
+            projectedGemEP = projectedGemEP + (bisEP * nonBisGemCount - totalNonBisGemEP)
         end
     end
 
