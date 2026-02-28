@@ -12,7 +12,7 @@ local levelingWeights = {
     ["DEATHKNIGHT"] = {
         ["Blood"] = { ITEM_MOD_STR_SHORT = 2.4, ITEM_MOD_ATTACK_POWER_SHORT = 1.0, RES_ARMOR = 1.7, ITEM_MOD_DEFENSE_RATING_SHORT = 1.3, ITEM_MOD_HIT_RATING_SHORT = 1.3, ITEM_MOD_EXPERTISE_RATING_SHORT = 1.0, ITEM_MOD_ARMOR_PENETRATION_RATING_SHORT = 0.7, ITEM_MOD_CRIT_RATING_SHORT = 0.8, ITEM_MOD_STAMINA_SHORT = 0.7 },
         ["Frost"] = { ITEM_MOD_STR_SHORT = 2.2, ITEM_MOD_ATTACK_POWER_SHORT = 1.0, RES_ARMOR = 0.05, ITEM_MOD_HIT_RATING_SHORT = 1.3, ITEM_MOD_EXPERTISE_RATING_SHORT = 1.0, ITEM_MOD_ARMOR_PENETRATION_RATING_SHORT = 0.7, ITEM_MOD_HASTE_RATING_SHORT = 0.9, ITEM_MOD_CRIT_RATING_SHORT = 1.1 },
-        ["Unholy"] = { ITEM_MOD_STR_SHORT = 2.1, ITEM_MOD_ATTACK_POWER_SHORT = 1.0, ITEM_MOD_HIT_RATING_SHORT = 1.3, ITEM_MOD_HASTE_RATING_SHORT = 0.8, ITEM_MOD_CRIT_RATING_SHORT = 1.2, ITEM_MOD_EXPERTISE_RATING_SHORT = 1.0, ITEM_MOD_ARMOR_PENETRATION_RATING_SHORT = 0.6 },
+        ["Unholy"] = { ITEM_MOD_STR_SHORT = 2.1, ITEM_MOD_ATTACK_POWER_SHORT = 1.0, ITEM_MOD_HIT_RATING_SHORT = 1.3, ITEM_MOD_HASTE_RATING_SHORT = 0.8, ITEM_MOD_CRIT_RATING_SHORT = 1.2, ITEM_MOD_EXPERTISE_RATING_SHORT = 1.0, ITEM_MOD_ARMOR_PENETRATION_RATING_SHORT = 0.6, ITEM_MOD_PET_DAMAGE_SHORT = 0.9 },
         ["Specs"] = { "Blood", "Frost", "Unholy" }, ["HitCap"] = 263, ["HitRatingType"] = CR_HIT_MELEE, ["ExpCap"] = 214
     },
     ["WARRIOR"] = {
@@ -88,7 +88,7 @@ local endgameWeights = {
     ["DEATHKNIGHT"] = {
         ["Blood"] = { ITEM_MOD_STAMINA_SHORT = 2.0, RES_ARMOR = 1.5, ITEM_MOD_DEFENSE_RATING_SHORT = 0.8, ITEM_MOD_STR_SHORT = 1.0, ITEM_MOD_DODGE_RATING_SHORT = 0.7, ITEM_MOD_PARRY_RATING_SHORT = 0.7, ITEM_MOD_HIT_RATING_SHORT = 0.0, ITEM_MOD_EXPERTISE_RATING_SHORT = 0.0, ITEM_MOD_ATTACK_POWER_SHORT = 0.0, ITEM_MOD_CRIT_RATING_SHORT = 0.0 },
         ["Frost"] = { ITEM_MOD_STR_SHORT = 2.2, ITEM_MOD_ARMOR_PENETRATION_RATING_SHORT = 1.8, ITEM_MOD_CRIT_RATING_SHORT = 1.2, ITEM_MOD_HASTE_RATING_SHORT = 1.0, ITEM_MOD_HIT_RATING_SHORT = 1.1, ITEM_MOD_ATTACK_POWER_SHORT = 0.8, ITEM_MOD_STAMINA_SHORT = 0.8, RES_ARMOR = 0.0, ITEM_MOD_EXPERTISE_RATING_SHORT = 0.0 },
-        ["Unholy"] = { ITEM_MOD_STR_SHORT = 1.9, ITEM_MOD_ARMOR_PENETRATION_RATING_SHORT = 1.9, ITEM_MOD_CRIT_RATING_SHORT = 1.3, ITEM_MOD_HASTE_RATING_SHORT = 1.1, ITEM_MOD_HIT_RATING_SHORT = 1.0, ITEM_MOD_ATTACK_POWER_SHORT = 0.8, ITEM_MOD_STAMINA_SHORT = 0.8, ITEM_MOD_EXPERTISE_RATING_SHORT = 0.0 },
+        ["Unholy"] = { ITEM_MOD_STR_SHORT = 1.9, ITEM_MOD_ARMOR_PENETRATION_RATING_SHORT = 1.9, ITEM_MOD_CRIT_RATING_SHORT = 1.3, ITEM_MOD_HASTE_RATING_SHORT = 1.1, ITEM_MOD_HIT_RATING_SHORT = 1.0, ITEM_MOD_ATTACK_POWER_SHORT = 0.8, ITEM_MOD_STAMINA_SHORT = 0.8, ITEM_MOD_EXPERTISE_RATING_SHORT = 0.0, ITEM_MOD_PET_DAMAGE_SHORT = 0.7 },
         ["Specs"] = { "Blood", "Frost", "Unholy" }, ["HitCap"] = 263, ["HitRatingType"] = CR_HIT_MELEE, ["ExpCap"] = 214
     },
     ["WARRIOR"] = {
@@ -491,6 +491,92 @@ function addon.GetGemStats(gemLink)
     return gemData[gemID]
 end
 
+-- Internal helper to normalise stat table keys returned by GetItemStats.
+-- Blizzard returns localized strings for primary stats on non-enUS clients
+-- ("Stärke", "Ausdauer", etc.).  Weight tables use the constant names such as
+-- ITEM_MOD_STR_SHORT; without normalization those values are ignored and EP
+-- calculations produce 0.  The map is built lazily from global constants so it
+-- works regardless of load order or locale.
+local statKeyMap
+local function BuildStatKeyMap()
+    if statKeyMap then return end
+    statKeyMap = {}
+    local constants = {
+        "ITEM_MOD_INTELLECT_SHORT",
+        "ITEM_MOD_SPELL_POWER_SHORT",
+        "ITEM_MOD_HIT_RATING_SHORT",
+        "ITEM_MOD_CRIT_RATING_SHORT",
+        "ITEM_MOD_HASTE_RATING_SHORT",
+        "ITEM_MOD_STAMINA_SHORT",
+        "ITEM_MOD_SPIRIT_SHORT",
+        "ITEM_MOD_STR_SHORT",
+        "ITEM_MOD_ATTACK_POWER_SHORT",
+        "ITEM_MOD_DEFENSE_RATING_SHORT",
+        "ITEM_MOD_EXPERTISE_RATING_SHORT",
+        "ITEM_MOD_ARMOR_PENETRATION_RATING_SHORT",
+        "ITEM_MOD_DODGE_RATING_SHORT",
+        "ITEM_MOD_PARRY_RATING_SHORT",
+        "ITEM_MOD_SPELL_DAMAGE_DONE_SHORT",
+        "ITEM_MOD_MANA_REGEN_SHORT",
+        "ITEM_MOD_AGILITY_SHORT",
+        "ITEM_MOD_FERAL_ATTACK_POWER_SHORT",
+        "ITEM_MOD_BLOCK_RATING_SHORT",
+        "ITEM_MOD_BLOCK_VALUE_SHORT",
+        "RES_ARMOR",
+        -- add any other constants that may appear in stats tables
+    }
+    for _, const in ipairs(constants) do
+        local localized = _G[const]
+        if type(localized) == "string" and localized ~= "" then
+            statKeyMap[localized] = const
+            statKeyMap[const] = const
+        end
+    end
+    -- handle Blizzard’s occasional use of the long form "STRENGTH" instead of
+    -- the official constant name; observed on some localized clients.
+    statKeyMap["ITEM_MOD_STRENGTH_SHORT"] = "ITEM_MOD_STR_SHORT"
+    statKeyMap["Stärke"] = "ITEM_MOD_STR_SHORT" -- defensive extra mapping
+
+    -- sanity check: ensure every key used in our default weight tables normalizes
+    -- to itself.  This should always be true; if it isn’t we’ll warn once in
+    -- chat so that future unknown keys can be investigated.
+    local function VerifyWeightKeys(weightsTable)
+        for classKey, classData in pairs(weightsTable or {}) do
+            for spec, specTable in pairs(classData) do
+                if type(specTable) == "table" then
+                    for statKey,_ in pairs(specTable) do
+                        local normalized = statKeyMap[statKey] or statKey
+                        if normalized ~= statKey then
+                            DEFAULT_CHAT_FRAME:AddMessage(
+                                "Pawn warning: weight key '"..statKey.."' normalizes to '"..normalized.."'")
+                        end
+                    end
+                end
+            end
+        end
+    end
+    VerifyWeightKeys(levelingWeights)
+    VerifyWeightKeys(endgameWeights)
+end
+
+local function NormalizeStatKeys(stats)
+    if type(stats) ~= "table" then
+        return stats
+    end
+    BuildStatKeyMap()
+    local normalized = {}
+    for k, v in pairs(stats) do
+        local key = statKeyMap[k] or k
+        -- trim whitespace just in case
+        key = key:gsub("^%s*(.-)%s*$", "%1")
+        normalized[key] = (normalized[key] or 0) + v
+    end
+    return normalized
+end
+
+-- expose as addon helper for other modules (frontend may still call it)
+addon.NormalizeStats = NormalizeStatKeys
+
 function addon.GetItemStatsWithEnchantAndGems(link)
     if not link then return nil end
     local stats = GetItemStats(link)
@@ -526,6 +612,11 @@ function addon.GetItemStatsWithEnchantAndGems(link)
             end
         end
     end
+
+    -- Always normalize the stat keys using our internal map.  This is done here
+    -- rather than relying on frontend code so that CalculateEP works even if the
+    -- frontend file hasn't been loaded yet.
+    merged = NormalizeStatKeys(merged)
 
     return merged
 end

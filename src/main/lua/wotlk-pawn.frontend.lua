@@ -298,6 +298,9 @@ local function GetLocalizedStatLabel(statName)
     return statName
 end
 
+
+
+
 local function ResolveTooltipValue(value)
     if type(value) == "function" then
         return value()
@@ -1618,6 +1621,21 @@ local function GetComparisonEP(itemEquipLoc, slots, hoveredLink)
     return hasEquipped and bestEquippedEP or 0, hasEquipped
 end
 
+local function ClearPawnLines(tooltip)
+    -- remove any existing EP line previously added by Pawn
+    local name = tooltip:GetName()
+    if not name then return end
+    for i = tooltip:NumLines(), 1, -1 do
+        local line = _G[name .. "TextLeft" .. i]
+        if line then
+            local text = line:GetText()
+            if text and text:find("EP:") then
+                line:SetText("")
+            end
+        end
+    end
+end
+
 local function AddEPToTooltip(tooltip)
     local _, link = tooltip:GetItem()
     if not link then return end
@@ -1627,6 +1645,13 @@ local function AddEPToTooltip(tooltip)
 
     local slots = slotMap[itemEquipLoc]
     if not slots then return end
+
+    -- clear any prior Pawn lines so repeated runs replace instead of append
+    ClearPawnLines(tooltip)
+
+    -- grab raw stats first so we can detect missing data
+    local stats = addon.GetItemStatsWithEnchantAndGems(link)
+    local statsEmpty = not stats or not next(stats)
 
     local hoveredEP = addon.CalculateEP(link)
     local bestEquippedEP, hasEquipped = GetComparisonEP(itemEquipLoc, slots, link)
@@ -1645,6 +1670,23 @@ local function AddEPToTooltip(tooltip)
         tooltip:AddLine(string.format("|cffFFD700%s EP: %s%s|r", currentSpecName, FormatLocalizedNumber(hoveredEP, 2), diffText))
     else
         tooltip:AddLine(string.format("|cffFFD700EP: %s%s|r", FormatLocalizedNumber(hoveredEP, 2), diffText))
+    end
+
+    -- schedule retries when EP is zero but either stats were missing or the
+    -- stats table contained entries.  Retry several times with increasing delay
+    -- because vendor/cached tooltips can take a few frames to populate.  Track
+    -- the count on the tooltip so we don't loop forever.
+    if C_Timer and C_Timer.After then
+        local count = tooltip._pawnRetryCount or 0
+        if count < 5 and hoveredEP == 0 then
+            tooltip._pawnRetryCount = count + 1
+            local delay = 0.1 * tooltip._pawnRetryCount
+            C_Timer.After(delay, function()
+                if tooltip:IsShown() then
+                    AddEPToTooltip(tooltip)
+                end
+            end)
+        end
     end
 
     local projectedGemEP = 0
