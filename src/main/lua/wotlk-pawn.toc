@@ -1,5 +1,5 @@
 ## Interface: 30300
-## Title: Knurtex WOTLK Pawn
+## Title: Knurtexs WOTLK Pawn
 ## Notes: Calculates EP values for all classes and specializations
 ## SavedVariables: WOTLKPawnDB
 ## SavedVariablesPerCharacter: WOTLKPawnCharDB
