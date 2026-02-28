@@ -27,6 +27,7 @@ local localizedStatLabels = {
         ITEM_MOD_MANA_REGEN_SHORT = "Mana Regen",
         ITEM_MOD_AGILITY_SHORT = "Agility",
         ITEM_MOD_FERAL_ATTACK_POWER_SHORT = "Feral Attack Power",
+        ITEM_MOD_PET_DAMAGE_SHORT = "Pet Damage",
         ITEM_MOD_BLOCK_RATING_SHORT = "Block Rating",
         ITEM_MOD_BLOCK_VALUE_SHORT = "Block Value",
         RES_ARMOR = "Armor"
@@ -52,6 +53,7 @@ local localizedStatLabels = {
         ITEM_MOD_FERAL_ATTACK_POWER_SHORT = "Wilde Angriffskraft",
         ITEM_MOD_BLOCK_RATING_SHORT = "Blockwertung",
         ITEM_MOD_BLOCK_VALUE_SHORT = "Blockwert",
+        ITEM_MOD_PET_DAMAGE_SHORT = "Begleiterschaden",
         RES_ARMOR = "Rüstung"
     }
 }
@@ -1560,10 +1562,11 @@ local function DumpCurrentOverrides()
 
         for _, key in ipairs(keys) do
             local value = source[key]
+            local label = GetLocalizedStatLabel(key)
             if valueFormat then
-                print(string.format("%s %s = " .. valueFormat, prefix, key, value))
+                print(string.format("%s %s = " .. valueFormat, prefix, label, value))
             else
-                print(string.format("%s %s = %s", prefix, key, tostring(value)))
+                print(string.format("%s %s = %s", prefix, label, tostring(value)))
             end
         end
     end
