@@ -30,7 +30,8 @@ local localizedStatLabels = {
         ITEM_MOD_PET_DAMAGE_SHORT = "Pet Damage",
         ITEM_MOD_BLOCK_RATING_SHORT = "Block Rating",
         ITEM_MOD_BLOCK_VALUE_SHORT = "Block Value",
-        RES_ARMOR = "Armor"
+        RES_ARMOR = "Armor",
+        ITEM_MOD_DAMAGE_PER_SECOND_SHORT = "Damage per Second",
     },
     ["deDE"] = {
         ITEM_MOD_INTELLECT_SHORT = "Intelligenz",
@@ -54,7 +55,8 @@ local localizedStatLabels = {
         ITEM_MOD_BLOCK_RATING_SHORT = "Blockwertung",
         ITEM_MOD_BLOCK_VALUE_SHORT = "Blockwert",
         ITEM_MOD_PET_DAMAGE_SHORT = "Begleiterschaden",
-        RES_ARMOR = "Rüstung"
+        RES_ARMOR = "Rüstung",
+        ITEM_MOD_DAMAGE_PER_SECOND_SHORT = "Schaden pro Sekunde",
     }
 }
 
